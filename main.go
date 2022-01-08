@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -26,6 +27,7 @@ func main() {
 	})
 	e.POST("/add", handleAdd)
 	e.GET("/get", handleGet)
+	e.POST("/update", handleUpdate)
 
 	e.Logger.Fatal(e.Start(":1323"))
 }
@@ -53,6 +55,38 @@ func handleGet(c echo.Context) error {
 		return err
 	}
 	return c.JSON(http.StatusCreated, &notes)
+}
+
+func handleUpdate(c echo.Context) error {
+	changedNote := Note{}
+	if err := c.Bind(&changedNote); err != nil {
+		handleError(c, err)
+		return err
+	}
+	notes := []Note{}
+	err := ReadJson("saveFile.json", &notes)
+	if err != nil {
+		handleError(c, err)
+		return err
+	}
+	target_i := -1
+	for i, note := range notes {
+		if note.UUID == changedNote.UUID {
+			target_i = i
+			break
+		}
+	}
+	if target_i == -1 {
+		err = errors.New("Target UUID is not found")
+		handleError(c, err)
+		return err
+	}
+	notes[target_i] = changedNote
+	if err = WriteJson("saveFile.json", &notes); err != nil {
+		handleError(c, err)
+		return err
+	}
+	return c.NoContent(http.StatusOK)
 }
 
 func handleError(c echo.Context, e error) {
