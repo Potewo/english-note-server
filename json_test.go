@@ -12,6 +12,13 @@ func TestReadJson(t *testing.T) {
 		t.Errorf("Error occured when read json: %v", err)
 	}
 	fmt.Printf("%#v\n", s)
+	err = ReadJson("notExists.json", &s)
+	if err != nil {
+		t.Errorf("Error occured when read not exists json file:\n%v\n", err)
+	}
+	if len(s) != 0 {
+		t.Errorf("Error occured when read not exits json file.returned not empty slice")
+	}
 }
 
 func TestWriteJson(t *testing.T) {
@@ -44,6 +51,7 @@ func TestAppendJson(t *testing.T) {
 			Examples:    "New examples",
 			Similar:     "New similar",
 			Tags:        []string{"newtag1", "newtag2"},
+			UUID:        "3e78def4-cce4-4cb0-bdd0-43accdac7caf",
 		},
 		{
 			English:     "New english2",
@@ -52,6 +60,7 @@ func TestAppendJson(t *testing.T) {
 			Examples:    "New examples2",
 			Similar:     "New similar2",
 			Tags:        []string{"newtag2_1", "newtag2_2"},
+			UUID:        "6d1c5cde-a77f-486e-811f-f5716d99281b",
 		},
 	}
 	err := AppendJson("append_test.json", &newNotes)
