@@ -25,9 +25,9 @@ func main() {
 	e.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, "Hello, World")
 	})
-	e.POST("/add", handleAdd)
+	e.POST("/upload", handleAdd)
+	e.PUT("/upload", handleUpdate)
 	e.GET("/get", handleGet)
-	e.POST("/update", handleUpdate)
 
 	e.Logger.Fatal(e.Start(":1323"))
 }
@@ -63,6 +63,7 @@ func handleUpdate(c echo.Context) error {
 		handleError(c, err)
 		return err
 	}
+	fmt.Printf("updating: %#v\n", changedNote)
 	notes := []Note{}
 	err := ReadJson("saveFile.json", &notes)
 	if err != nil {
