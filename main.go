@@ -19,6 +19,12 @@ type Note struct {
 	UUID        string   `json:"uuid"`
 }
 
+type Record struct {
+	UUID string `json:"uuid"`
+	Correct bool `json:"correct"`
+	Date string `json:"date"`
+}
+
 func main() {
 	e := echo.New()
 	e.Use(middleware.CORS())
@@ -28,6 +34,7 @@ func main() {
 	e.POST("/upload", handleAdd)
 	e.PUT("/upload", handleUpdate)
 	e.GET("/get", handleGet)
+	e.DELETE("/upload", handleDelete)
 
 	e.Logger.Fatal(e.Start(":1323"))
 }
@@ -89,6 +96,54 @@ func handleUpdate(c echo.Context) error {
 	}
 	return c.NoContent(http.StatusOK)
 }
+
+func handleDelete(c echo.Context) error {
+	deleteNote := Note{}
+	if err := c.Bind(&deleteNote); err != nil {
+		handleError(c, err)
+		return err
+	}
+	fmt.Printf("deleting: %#v\n", deleteNote)
+	notes := []Note{}
+	err := ReadJson("saveFile.json", &notes)
+	if err != nil {
+		handleError(c, err)
+		return err
+	}
+	target_i := -1
+	for i, note := range notes {
+		if note.UUID == deleteNote.UUID {
+			target_i = i
+			break
+		}
+	}
+	if target_i == -1 {
+		err = errors.New("Target UUID is not found")
+		handleError(c, err)
+		return err
+	}
+	//remove
+	notes = notes[:target_i+copy(notes[target_i:], notes[target_i+1:])]
+	if err = WriteJson("saveFile.json", &notes); err != nil {
+		handleError(c, err)
+		return err
+	}
+	return c.NoContent(http.StatusOK)
+}
+
+// func handleGetRecord(c echo.Context) error {
+// 	newRecords := []Record{}
+// 	if err := c.Bind(&newRecords); err != nil {
+// 		handleError(c, err)
+// 		return err
+// 	}
+// 	fmt.Printf("Get record: %#v\n", newRecords)
+// 	if err := AppendJson("saveRecordFile.json", &newRecords); err != nil {
+// 		handleError(c, err)
+// 		return err
+// 	}
+// 	return c.NoContent(http.StatusOK)
+// }
 
 func handleError(c echo.Context, e error) {
 	fmt.Printf("Error:\n%#v\n", e)
