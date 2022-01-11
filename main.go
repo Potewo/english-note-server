@@ -19,6 +19,12 @@ type Note struct {
 	UUID        string   `json:"uuid"`
 }
 
+type Record struct {
+	UUID string `json:"uuid"`
+	Correct bool `json:"correct"`
+	Date string `json:"date"`
+}
+
 func main() {
 	e := echo.New()
 	e.Use(middleware.CORS())
@@ -28,6 +34,8 @@ func main() {
 	e.POST("/upload", handleAdd)
 	e.PUT("/upload", handleUpdate)
 	e.GET("/get", handleGet)
+	e.GET("/record", handleGetRecord)
+	e.POST("/record", handleAddRecord)
 
 	e.Logger.Fatal(e.Start(":1323"))
 }
@@ -97,3 +105,27 @@ func handleError(c echo.Context, e error) {
 		fmt.Printf("Error occured with sending json error message")
 	}
 }
+
+func handleGetRecord(c echo.Context) error {
+	records := []Record{}
+	err := ReadRecord("recordSaveFile.json", &records)
+	if err != nil {
+		handleError(c, err)
+		return err
+	}
+	return c.JSON(http.StatusCreated, &records)
+}
+
+func handleAddRecord(c echo.Context) error {
+	newRecord := Record{}
+	if err := c.Bind(&newRecord); err != nil {
+		return err
+	}
+	newRecords := []Record{newRecord}
+	err := AppendRecord("recordSaveFile.json", &newRecords)
+	if err != nil {
+		return err
+	}
+	return c.NoContent(http.StatusOK)
+}
+
