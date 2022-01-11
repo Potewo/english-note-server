@@ -152,11 +152,10 @@ func handleGetRecord(c echo.Context) error {
 }
 
 func handleAddRecord(c echo.Context) error {
-	newRecord := Record{}
-	if err := c.Bind(&newRecord); err != nil {
+	newRecords := []Record{}
+	if err := c.Bind(&newRecords); err != nil {
 		return err
 	}
-	newRecords := []Record{newRecord}
 	err := AppendRecord("recordSaveFile.json", &newRecords)
 	if err != nil {
 		return err
