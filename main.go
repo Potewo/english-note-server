@@ -133,20 +133,6 @@ func handleDelete(c echo.Context) error {
 	return c.NoContent(http.StatusOK)
 }
 
-// func handleGetRecord(c echo.Context) error {
-// 	newRecords := []Record{}
-// 	if err := c.Bind(&newRecords); err != nil {
-// 		handleError(c, err)
-// 		return err
-// 	}
-// 	fmt.Printf("Get record: %#v\n", newRecords)
-// 	if err := AppendJson("saveRecordFile.json", &newRecords); err != nil {
-// 		handleError(c, err)
-// 		return err
-// 	}
-// 	return c.NoContent(http.StatusOK)
-// }
-
 func handleError(c echo.Context, e error) {
 	fmt.Printf("Error:\n%#v\n", e)
 	sendingErr := c.JSON(http.StatusInternalServerError, e)
