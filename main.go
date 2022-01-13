@@ -25,6 +25,9 @@ type Record struct {
 	Date string `json:"date"`
 }
 
+var noteSaveFile = "saveFiles/saveFile.json"
+var recordSaveFile = "saveFiles/recordSaveFile.json"
+
 func main() {
 	e := echo.New()
 	e.Use(middleware.CORS())
@@ -49,7 +52,7 @@ func handleAdd(c echo.Context) error {
 	ul := []Note{u}
 	fmt.Printf("Json received:\n%#v\n", u)
 
-	if err := AppendJson("saveFile.json", &ul); err != nil {
+	if err := AppendJson(noteSaveFile, &ul); err != nil {
 		handleError(c, err)
 		return err
 	}
@@ -58,7 +61,7 @@ func handleAdd(c echo.Context) error {
 
 func handleGet(c echo.Context) error {
 	notes := []Note{}
-	err := ReadJson("saveFile.json", &notes)
+	err := ReadJson(noteSaveFile, &notes)
 	if err != nil {
 		handleError(c, err)
 		return err
@@ -74,7 +77,7 @@ func handleUpdate(c echo.Context) error {
 	}
 	fmt.Printf("updating: %#v\n", changedNote)
 	notes := []Note{}
-	err := ReadJson("saveFile.json", &notes)
+	err := ReadJson(noteSaveFile, &notes)
 	if err != nil {
 		handleError(c, err)
 		return err
@@ -92,7 +95,7 @@ func handleUpdate(c echo.Context) error {
 		return err
 	}
 	notes[target_i] = changedNote
-	if err = WriteJson("saveFile.json", &notes); err != nil {
+	if err = WriteJson(noteSaveFile, &notes); err != nil {
 		handleError(c, err)
 		return err
 	}
@@ -107,7 +110,7 @@ func handleDelete(c echo.Context) error {
 	}
 	fmt.Printf("deleting: %#v\n", deleteNote)
 	notes := []Note{}
-	err := ReadJson("saveFile.json", &notes)
+	err := ReadJson(noteSaveFile, &notes)
 	if err != nil {
 		handleError(c, err)
 		return err
@@ -126,7 +129,7 @@ func handleDelete(c echo.Context) error {
 	}
 	//remove
 	notes = notes[:target_i+copy(notes[target_i:], notes[target_i+1:])]
-	if err = WriteJson("saveFile.json", &notes); err != nil {
+	if err = WriteJson(noteSaveFile, &notes); err != nil {
 		handleError(c, err)
 		return err
 	}
@@ -143,7 +146,7 @@ func handleError(c echo.Context, e error) {
 
 func handleGetRecord(c echo.Context) error {
 	records := []Record{}
-	err := ReadRecord("recordSaveFile.json", &records)
+	err := ReadRecord(recordSaveFile, &records)
 	if err != nil {
 		handleError(c, err)
 		return err
@@ -156,7 +159,7 @@ func handleAddRecord(c echo.Context) error {
 	if err := c.Bind(&newRecords); err != nil {
 		return err
 	}
-	err := AppendRecord("recordSaveFile.json", &newRecords)
+	err := AppendRecord(recordSaveFile, &newRecords)
 	if err != nil {
 		return err
 	}
