@@ -31,15 +31,17 @@ var recordSaveFile = "saveFiles/recordSaveFile.json"
 func main() {
 	e := echo.New()
 	e.Use(middleware.CORS())
-	e.GET("/", func(c echo.Context) error {
-		return c.String(http.StatusOK, "Hello, World")
-	})
 	e.POST("/upload", handleAdd)
 	e.PUT("/upload", handleUpdate)
 	e.GET("/get", handleGet)
 	e.DELETE("/upload", handleDelete)
 	e.GET("/record", handleGetRecord)
 	e.POST("/record", handleAddRecord)
+	e.Static("/", "public")
+	e.File("/", "public/index.html")
+	e.File("/new/*", "public/index.html")
+	e.File("/edit/*", "public/index.html")
+	e.File("/notes/*", "public/index.html")
 
 	e.Logger.Fatal(e.Start(":1323"))
 }
