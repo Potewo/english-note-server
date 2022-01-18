@@ -7,3 +7,5 @@ services:
     restart: always
     ports:
       - 80:1323
+    volumes:
+      - ./saveFiles:/go/src/app/saveFiles
