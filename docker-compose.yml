@@ -1,0 +1,9 @@
+version: '3'
+services:
+  english-note-server:
+    build: .
+    image: english-note-server-compose
+    container_name: english-note-server-compose
+    restart: always
+    ports:
+      - 80:1323
