@@ -1,0 +1,15 @@
+[{
+  "english": "english",
+  "japanese": "japanese",
+  "description": "description",
+  "similar": "similar",
+  "examples": "examples",
+  "tags": [
+    {
+      "name": "tag1"
+    },
+    {
+      "name": "tag2"
+    }
+  ]
+}]
