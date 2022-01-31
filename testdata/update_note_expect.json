@@ -1,0 +1,2 @@
+[{"ID":1,"CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"2022-01-28T21:53:57.543150951+09:00","DeletedAt":null,"English":"updated_english","Japanese":"japanese","Description":"description","Examples":"examples","Similar":"similar","Tags":[{"ID":1,"CreatedAt":"2022-01-28T21:53:57.543515585+09:00","UpdatedAt":"2022-01-28T21:53:57.543515585+09:00","DeletedAt":null,"NoteID":1,"Name":"tag1"},{"ID":2,"CreatedAt":"2022-01-28T21:53:57.543515585+09:00","UpdatedAt":"2022-01-28T21:53:57.543515585+09:00","DeletedAt":null,"NoteID":1,"Name":"tag2"}]}]
+

@@ -12,7 +12,7 @@ var db *DB
 
 func main() {
 	var err error
-	db, err = NewDB("test.db")
+	db, err = NewDB("saveFile.db")
 	if err != nil {
 		panic(err)
 	}
@@ -55,11 +55,11 @@ func handleAddNote(c echo.Context) error {
 		return err
 	}
 	fmt.Printf("Json received:\n%#v\n", newNote)
-	err := db.AddNote(newNote)
+	notes, err := db.AddNote(newNote)
 	if err != nil {
 		return err
 	}
-	return c.NoContent(http.StatusOK)
+	return c.JSON(http.StatusCreated, &notes)
 }
 
 func handleGetNotes(c echo.Context) error {
@@ -67,7 +67,7 @@ func handleGetNotes(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	return c.JSON(http.StatusCreated, &notes)
+	return c.JSON(http.StatusOK, &notes)
 }
 
 func handleUpdateNotes(c echo.Context) error {
@@ -76,11 +76,11 @@ func handleUpdateNotes(c echo.Context) error {
 		return err
 	}
 	fmt.Printf("updating: %#v\n", notes)
-	err := db.UpdateNotes(notes)
+	updatedNotes, err := db.UpdateNotes(notes)
 	if err != nil {
 		return err
 	}
-	return c.NoContent(http.StatusOK)
+	return c.JSON(http.StatusCreated, &updatedNotes)
 }
 
 func handleDeleteNotes(c echo.Context) error {
@@ -106,7 +106,7 @@ func handleGetRecord(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	return c.JSON(http.StatusCreated, records)
+	return c.JSON(http.StatusOK, records)
 }
 
 func handleAddRecord(c echo.Context) error {
@@ -114,10 +114,10 @@ func handleAddRecord(c echo.Context) error {
 	if err := c.Bind(&newRecords); err != nil {
 		return err
 	}
-	err := db.AddRecords(newRecords)
+	records, err := db.AddRecords(newRecords)
 	if err != nil {
 		return err
 	}
-	return c.NoContent(http.StatusOK)
+	return c.JSON(http.StatusCreated, &records)
 }
 

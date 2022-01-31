@@ -54,12 +54,12 @@ func NewDB(name string) (*DB, error) {
 	return d, nil
 }
 
-func (d *DB) AddNote(notes []Note) error {
+func (d *DB) AddNote(notes []Note) ([]Note, error) {
 	c := d.db.Create(&notes)
 	if c.Error != nil {
-		return c.Error
+		return nil, c.Error
 	}
-	return nil
+	return notes, nil
 }
 
 func (d *DB) ReadAllNotes() ([]Note, error) {
@@ -71,15 +71,14 @@ func (d *DB) ReadAllNotes() ([]Note, error) {
 	return notes, nil
 }
 
-// TODO: タグの削除、更新
-func (d *DB) UpdateNotes(notes []Note) error {
-	for _, note := range notes {
-		c := d.db.Model(&note).Select("*").Updates(note)
+func (d *DB) UpdateNotes(notes []Note) ([]Note, error) {
+	for i := range notes {
+		c := d.db.Model(&notes[i]).Select("*").Updates(&notes[i])
 		if c.Error != nil {
-			return c.Error
+			return nil, c.Error
 		}
 	}
-	return nil
+	return notes, nil
 }
 
 func (d *DB) DeleteNotes(notes []Note) error {
@@ -121,10 +120,10 @@ func (d *DB) ReadAllRecords() ([]Record, error) {
 	return records, nil
 }
 
-func (d *DB) AddRecords(records []Record) error {
+func (d *DB) AddRecords(records []Record) ([]Record, error) {
 	c := d.db.Create(&records)
 	if c.Error != nil {
-		return c.Error
+		return nil, c.Error
 	}
-	return nil
+	return records, nil
 }
