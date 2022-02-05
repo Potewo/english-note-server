@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 
@@ -9,32 +8,31 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 )
 
-type Note struct {
-	English     string   `json:"english"`
-	Japanese    string   `json:"japanese"`
-	Description string   `json:"description"`
-	Examples    string   `json:"examples"`
-	Similar     string   `json:"similar"`
-	Tags        []string `json:"tags"`
-	UUID        string   `json:"uuid"`
-}
-
-type Record struct {
-	UUID string `json:"uuid"`
-	Correct bool `json:"correct"`
-	Date string `json:"date"`
-}
-
-var noteSaveFile = "saveFiles/saveFile.json"
-var recordSaveFile = "saveFiles/recordSaveFile.json"
+var db *DB
 
 func main() {
+	var err error
+	db, err = NewDB("saveFiles/saveFile.db")
+	if err != nil {
+		panic(err)
+	}
 	e := echo.New()
 	e.Use(middleware.CORS())
-	e.POST("/upload", handleAdd)
-	e.PUT("/upload", handleUpdate)
-	e.GET("/get", handleGet)
-	e.DELETE("/upload", handleDelete)
+	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
+		Format: "time:\t${time_rfc3339}\n" +
+		"remote ip:\t${remote_ip}\n" +
+		"uri:\t${uri}\n" +
+		"method:\t${method}\n" +
+		"status:\t${status}\n" +
+		"error:\t${error}\n" +
+		"header:\t${header:body}\n" +
+		"-------------------\n\n",
+	}))
+	e.Use(middleware.BodyDump(bodyDumpHandler))
+	e.POST("/note", handleAddNote)
+	e.PUT("/note", handleUpdateNotes)
+	e.GET("/note", handleGetNotes)
+	e.DELETE("/note", handleDeleteNotes)
 	e.GET("/record", handleGetRecord)
 	e.POST("/record", handleAddRecord)
 	e.Static("/", "public")
@@ -46,114 +44,69 @@ func main() {
 	e.Logger.Fatal(e.Start(":1323"))
 }
 
-func handleAdd(c echo.Context) error {
-	u := Note{}
-	if err := c.Bind(&u); err != nil {
-		return err
-	}
-	ul := []Note{u}
-	fmt.Printf("Json received:\n%#v\n", u)
-
-	if err := AppendJson(noteSaveFile, &ul); err != nil {
-		handleError(c, err)
-		return err
-	}
-	return c.NoContent(http.StatusOK)
+func bodyDumpHandler(c echo.Context, reqBody, resBody []byte) {
+  fmt.Printf("Request Body:\t%v\n", string(reqBody))
+  fmt.Printf("Response Body:\t%v\n", string(resBody))
 }
 
-func handleGet(c echo.Context) error {
-	notes := []Note{}
-	err := ReadJson(noteSaveFile, &notes)
+func handleAddNote(c echo.Context) error {
+	newNote := []Note{}
+	if err := c.Bind(&newNote); err != nil {
+		return err
+	}
+	fmt.Printf("Json received:\n%#v\n", newNote)
+	notes, err := db.AddNote(newNote)
 	if err != nil {
-		handleError(c, err)
 		return err
 	}
 	return c.JSON(http.StatusCreated, &notes)
 }
 
-func handleUpdate(c echo.Context) error {
-	changedNote := Note{}
-	if err := c.Bind(&changedNote); err != nil {
-		handleError(c, err)
-		return err
-	}
-	fmt.Printf("updating: %#v\n", changedNote)
-	notes := []Note{}
-	err := ReadJson(noteSaveFile, &notes)
+func handleGetNotes(c echo.Context) error {
+	notes, err := db.ReadAllNotes()
 	if err != nil {
-		handleError(c, err)
 		return err
 	}
-	target_i := -1
-	for i, note := range notes {
-		if note.UUID == changedNote.UUID {
-			target_i = i
-			break
-		}
-	}
-	if target_i == -1 {
-		err = errors.New("Target UUID is not found")
-		handleError(c, err)
-		return err
-	}
-	notes[target_i] = changedNote
-	if err = WriteJson(noteSaveFile, &notes); err != nil {
-		handleError(c, err)
-		return err
-	}
-	return c.NoContent(http.StatusOK)
+	return c.JSON(http.StatusOK, &notes)
 }
 
-func handleDelete(c echo.Context) error {
-	deleteNote := Note{}
-	if err := c.Bind(&deleteNote); err != nil {
-		handleError(c, err)
-		return err
-	}
-	fmt.Printf("deleting: %#v\n", deleteNote)
+func handleUpdateNotes(c echo.Context) error {
 	notes := []Note{}
-	err := ReadJson(noteSaveFile, &notes)
+	if err := c.Bind(&notes); err != nil {
+		return err
+	}
+	fmt.Printf("updating: %#v\n", notes)
+	updatedNotes, err := db.UpdateNotes(notes)
 	if err != nil {
-		handleError(c, err)
 		return err
 	}
-	target_i := -1
-	for i, note := range notes {
-		if note.UUID == deleteNote.UUID {
-			target_i = i
-			break
-		}
-	}
-	if target_i == -1 {
-		err = errors.New("Target UUID is not found")
-		handleError(c, err)
-		return err
-	}
-	//remove
-	notes = notes[:target_i+copy(notes[target_i:], notes[target_i+1:])]
-	if err = WriteJson(noteSaveFile, &notes); err != nil {
-		handleError(c, err)
-		return err
-	}
-	return c.NoContent(http.StatusOK)
+	return c.JSON(http.StatusCreated, &updatedNotes)
 }
 
-func handleError(c echo.Context, e error) {
-	fmt.Printf("Error:\n%#v\n", e)
-	sendingErr := c.JSON(http.StatusInternalServerError, e)
-	if sendingErr != nil {
-		fmt.Printf("Error occured with sending json error message")
+func handleDeleteNotes(c echo.Context) error {
+	notes := []Note{}
+	if err := c.Bind(&notes); err != nil {
+		return err
 	}
+	err := db.DeleteNotes(notes)
+	if err != nil {
+		return err
+	}
+	for _, note := range notes {
+		err = db.DeleteTags(note.Tags)
+		if err != nil {
+			return err
+		}
+	}
+	return c.NoContent(http.StatusOK)
 }
 
 func handleGetRecord(c echo.Context) error {
-	records := []Record{}
-	err := ReadRecord(recordSaveFile, &records)
+	records, err := db.ReadAllRecords()
 	if err != nil {
-		handleError(c, err)
 		return err
 	}
-	return c.JSON(http.StatusCreated, &records)
+	return c.JSON(http.StatusOK, records)
 }
 
 func handleAddRecord(c echo.Context) error {
@@ -161,10 +114,10 @@ func handleAddRecord(c echo.Context) error {
 	if err := c.Bind(&newRecords); err != nil {
 		return err
 	}
-	err := AppendRecord(recordSaveFile, &newRecords)
+	records, err := db.AddRecords(newRecords)
 	if err != nil {
 		return err
 	}
-	return c.NoContent(http.StatusOK)
+	return c.JSON(http.StatusCreated, &records)
 }
 
