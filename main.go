@@ -12,7 +12,7 @@ var db *DB
 
 func main() {
 	var err error
-	db, err = NewDB("saveFile.db")
+	db, err = NewDB("saveFiles/saveFile.db")
 	if err != nil {
 		panic(err)
 	}
