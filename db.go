@@ -8,24 +8,24 @@ import (
 
 type Note struct {
 	gorm.Model
-	English string
-	Japanese string
+	English     string
+	Japanese    string
 	Description string
-	Examples string
-	Similar string
-	Tags []Tag
+	Examples    string
+	Similar     string
+	Tags        []Tag
 }
 
 type Record struct {
 	gorm.Model
 	Correct bool
-	NoteID uint
+	NoteID  uint
 }
 
 type Tag struct {
 	gorm.Model
 	NoteID uint
-	Name string
+	Name   string
 }
 
 type DB struct {
@@ -71,8 +71,36 @@ func (d *DB) ReadAllNotes() ([]Note, error) {
 	return notes, nil
 }
 
+func (d *DB) ReadNote(id uint) (Note, error) {
+	note := Note{}
+	c := d.db.Preload(clause.Associations).First(&note, id)
+	if c.Error != nil {
+		return Note{}, c.Error
+	}
+	return note, nil
+}
+
 func (d *DB) UpdateNotes(notes []Note) ([]Note, error) {
 	for i := range notes {
+		note, err := d.ReadNote(notes[i].ID)
+		if err != nil {
+			return nil, err
+		}
+		for _, savedTag := range note.Tags {
+			have := false
+			for _, requestedTag := range notes[i].Tags {
+				if savedTag.ID == requestedTag.ID {
+					have = true
+					break
+				}
+			}
+			if !have {
+				err = d.DeleteTags([]Tag{savedTag})
+				if err != nil {
+					return nil, err
+				}
+			}
+		}
 		c := d.db.Model(&notes[i]).Select("*").Updates(&notes[i])
 		if c.Error != nil {
 			return nil, c.Error
