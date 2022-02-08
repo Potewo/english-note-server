@@ -18,7 +18,7 @@ type Note struct {
 
 type Record struct {
 	gorm.Model
-	Correct bool
+	Correct uint
 	NoteID  uint
 }
 
