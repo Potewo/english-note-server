@@ -1,6 +1,8 @@
 package main
 
 import (
+	"math"
+
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -54,6 +56,13 @@ func NewDB(name string) (*DB, error) {
 	return d, nil
 }
 
+func Paginate(page int, pageSize int) func(db *gorm.DB) *gorm.DB {
+	return func (db *gorm.DB) *gorm.DB {
+		offset := (page - 1) * pageSize
+		return db.Offset(offset).Limit(pageSize)
+	}
+}
+
 func (d *DB) AddNote(notes []Note) ([]Note, error) {
 	c := d.db.Create(&notes)
 	if c.Error != nil {
@@ -62,13 +71,15 @@ func (d *DB) AddNote(notes []Note) ([]Note, error) {
 	return notes, nil
 }
 
-func (d *DB) ReadAllNotes() ([]Note, error) {
+func (d *DB) ReadAllNotes(page int, pageSize int) ([]Note, int, error) {
 	notes := []Note{}
-	c := d.db.Preload(clause.Associations).Find(&notes)
+	totalItems := d.db.Find(&notes).RowsAffected
+	totalPages := int(math.Ceil(float64(totalItems) / float64(pageSize)))
+	c := d.db.Scopes(Paginate(page, pageSize)).Preload(clause.Associations).Find(&notes)
 	if c.Error != nil {
-		return nil, c.Error
+		return nil, 0, c.Error
 	}
-	return notes, nil
+	return notes, totalPages, nil
 }
 
 func (d *DB) ReadNote(id uint) (Note, error) {

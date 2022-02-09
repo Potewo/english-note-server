@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -63,10 +64,29 @@ func handleAddNote(c echo.Context) error {
 }
 
 func handleGetNotes(c echo.Context) error {
-	notes, err := db.ReadAllNotes()
+	defaultPageSize := 30
+	page, err := strconv.Atoi(c.QueryParam("page"))
+	fmt.Printf("\npage:\t%v\n", page)
+	if err != nil {
+		page = 1
+	}
+	if page < 1 {
+		page = 1
+	}
+	pageSize, err := strconv.Atoi(c.QueryParam("page_size"))
+	fmt.Printf("\npage size:\t%v\n", pageSize)
+	if err != nil {
+		pageSize = defaultPageSize
+	}
+	if pageSize < 0 || pageSize > 100 {
+		pageSize = defaultPageSize
+	}
+	notes, totalPages, err := db.ReadAllNotes(page, pageSize)
 	if err != nil {
 		return err
 	}
+	c.Response().Header().Set(echo.HeaderAccessControlExposeHeaders, "*")
+	c.Response().Header().Set("Englishnote-Lastpage", strconv.Itoa(totalPages))
 	return c.JSON(http.StatusOK, &notes)
 }
 
