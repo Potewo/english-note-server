@@ -64,29 +64,51 @@ func handleAddNote(c echo.Context) error {
 }
 
 func handleGetNotes(c echo.Context) error {
-	defaultPageSize := 30
-	page, err := strconv.Atoi(c.QueryParam("page"))
-	fmt.Printf("\npage:\t%v\n", page)
+	mode := c.QueryParam("mode")
+	switch mode {
+		case "random":
+			return handleGetRandomNotes(c)
+		default:
+			defaultPageSize := 30
+			page, err := strconv.Atoi(c.QueryParam("page"))
+			fmt.Printf("\npage:\t%v\n", page)
+			if err != nil {
+				page = 1
+			}
+			if page < 1 {
+				page = 1
+			}
+			pageSize, err := strconv.Atoi(c.QueryParam("page_size"))
+			fmt.Printf("\npage size:\t%v\n", pageSize)
+			if err != nil {
+				pageSize = defaultPageSize
+			}
+			if pageSize < 0 || pageSize > 100 {
+				pageSize = defaultPageSize
+			}
+			notes, totalPages, err := db.ReadAllNotes(page, pageSize)
+			if err != nil {
+				return err
+			}
+			c.Response().Header().Set(echo.HeaderAccessControlExposeHeaders, "*")
+			c.Response().Header().Set("Englishnote-Lastpage", strconv.Itoa(totalPages))
+			return c.JSON(http.StatusOK, &notes)
+	}
+}
+
+func handleGetRandomNotes(c echo.Context) error {
+	defaultLimit := 30
+	limit, err := strconv.Atoi(c.QueryParam("limit"))
 	if err != nil {
-		page = 1
+		limit = defaultLimit
 	}
-	if page < 1 {
-		page = 1
+	if limit < 1 {
+		limit = defaultLimit
 	}
-	pageSize, err := strconv.Atoi(c.QueryParam("page_size"))
-	fmt.Printf("\npage size:\t%v\n", pageSize)
-	if err != nil {
-		pageSize = defaultPageSize
-	}
-	if pageSize < 0 || pageSize > 100 {
-		pageSize = defaultPageSize
-	}
-	notes, totalPages, err := db.ReadAllNotes(page, pageSize)
+	notes, err := db.GetRandomNotes(limit)
 	if err != nil {
 		return err
 	}
-	c.Response().Header().Set(echo.HeaderAccessControlExposeHeaders, "*")
-	c.Response().Header().Set("Englishnote-Lastpage", strconv.Itoa(totalPages))
 	return c.JSON(http.StatusOK, &notes)
 }
 

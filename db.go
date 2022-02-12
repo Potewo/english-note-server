@@ -63,6 +63,12 @@ func Paginate(page int, pageSize int) func(db *gorm.DB) *gorm.DB {
 	}
 }
 
+func Random(limit int) func(db *gorm.DB) *gorm.DB {
+	return func (db *gorm.DB) *gorm.DB {
+		return db.Order("RANDOM()").Limit(limit);
+	}
+}
+
 func (d *DB) AddNote(notes []Note) ([]Note, error) {
 	c := d.db.Create(&notes)
 	if c.Error != nil {
@@ -80,6 +86,15 @@ func (d *DB) ReadAllNotes(page int, pageSize int) ([]Note, int, error) {
 		return nil, 0, c.Error
 	}
 	return notes, totalPages, nil
+}
+
+func (d *DB) GetRandomNotes(limit int) ([]Note, error) {
+	notes := []Note{}
+	c := db.db.Scopes(Random(limit)).Preload(clause.Associations).Find(&notes)
+	if c.Error != nil {
+		return nil, c.Error
+	}
+	return notes, nil
 }
 
 func (d *DB) ReadNote(id uint) (Note, error) {
