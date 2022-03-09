@@ -7,6 +7,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"gorm.io/gorm"
 )
 
 var db *DB
@@ -21,13 +22,13 @@ func main() {
 	e.Use(middleware.CORS())
 	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
 		Format: "time:\t${time_rfc3339}\n" +
-		"remote ip:\t${remote_ip}\n" +
-		"uri:\t${uri}\n" +
-		"method:\t${method}\n" +
-		"status:\t${status}\n" +
-		"error:\t${error}\n" +
-		"header:\t${header:body}\n" +
-		"-------------------\n\n",
+			"remote ip:\t${remote_ip}\n" +
+			"uri:\t${uri}\n" +
+			"method:\t${method}\n" +
+			"status:\t${status}\n" +
+			"error:\t${error}\n" +
+			"header:\t${header:body}\n" +
+			"-------------------\n\n",
 	}))
 	e.Use(middleware.BodyDump(bodyDumpHandler))
 	e.POST("/note", handleAddNote)
@@ -46,8 +47,8 @@ func main() {
 }
 
 func bodyDumpHandler(c echo.Context, reqBody, resBody []byte) {
-  fmt.Printf("Request Body:\t%v\n", string(reqBody))
-  fmt.Printf("Response Body:\t%v\n", string(resBody))
+	fmt.Printf("Request Body:\t%v\n", string(reqBody))
+	fmt.Printf("Response Body:\t%v\n", string(resBody))
 }
 
 func handleAddNote(c echo.Context) error {
@@ -64,51 +65,34 @@ func handleAddNote(c echo.Context) error {
 }
 
 func handleGetNotes(c echo.Context) error {
-	mode := c.QueryParam("mode")
-	switch mode {
-		case "random":
-			return handleGetRandomNotes(c)
-		default:
-			defaultPageSize := 30
-			page, err := strconv.Atoi(c.QueryParam("page"))
-			fmt.Printf("\npage:\t%v\n", page)
-			if err != nil {
-				page = 1
-			}
-			if page < 1 {
-				page = 1
-			}
-			pageSize, err := strconv.Atoi(c.QueryParam("page_size"))
-			fmt.Printf("\npage size:\t%v\n", pageSize)
-			if err != nil {
-				pageSize = defaultPageSize
-			}
-			if pageSize < 0 || pageSize > 100 {
-				pageSize = defaultPageSize
-			}
-			notes, totalPages, err := db.ReadAllNotes(page, pageSize)
-			if err != nil {
-				return err
-			}
-			c.Response().Header().Set(echo.HeaderAccessControlExposeHeaders, "*")
-			c.Response().Header().Set("Englishnote-Lastpage", strconv.Itoa(totalPages))
-			return c.JSON(http.StatusOK, &notes)
+	var tx *gorm.DB = db.db
+	q := c.QueryParams()
+	if q.Get("mode") == "random" {
+		tx = db.Random(tx)
 	}
-}
+	pageSize := 30
+	if q.Has("page_size") {
+		_pageSize, err := strconv.Atoi(q.Get("page_size"))
+		if err == nil && _pageSize > 0 || _pageSize <= 100 {
+			pageSize = _pageSize
+		}
+	}
+	fmt.Printf("\npage size:\t%v\n", pageSize)
+	page := 1
+	if q.Has("page") {
+		_page, err := strconv.Atoi(q.Get("page"))
+		if err == nil && _page > 1 {
+			page = _page
+		}
+	}
+	fmt.Printf("\npage:\t%v\n", page)
 
-func handleGetRandomNotes(c echo.Context) error {
-	defaultLimit := 30
-	limit, err := strconv.Atoi(c.QueryParam("limit"))
-	if err != nil {
-		limit = defaultLimit
-	}
-	if limit < 1 {
-		limit = defaultLimit
-	}
-	notes, err := db.GetRandomNotes(limit)
+	notes, totalPages, err := db.ReadAllNotes(tx, page, pageSize)
 	if err != nil {
 		return err
 	}
+	c.Response().Header().Set(echo.HeaderAccessControlExposeHeaders, "*")
+	c.Response().Header().Set("Englishnote-Lastpage", strconv.Itoa(totalPages))
 	return c.JSON(http.StatusOK, &notes)
 }
 
@@ -162,4 +146,3 @@ func handleAddRecord(c echo.Context) error {
 	}
 	return c.JSON(http.StatusCreated, &records)
 }
-

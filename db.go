@@ -57,16 +57,14 @@ func NewDB(name string) (*DB, error) {
 }
 
 func Paginate(page int, pageSize int) func(db *gorm.DB) *gorm.DB {
-	return func (db *gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
 		offset := (page - 1) * pageSize
 		return db.Offset(offset).Limit(pageSize)
 	}
 }
 
-func Random(limit int) func(db *gorm.DB) *gorm.DB {
-	return func (db *gorm.DB) *gorm.DB {
-		return db.Order("RANDOM()").Limit(limit);
-	}
+func (d *DB) Random(tx *gorm.DB) *gorm.DB {
+	return tx.Order("RANDOM()")
 }
 
 func (d *DB) AddNote(notes []Note) ([]Note, error) {
@@ -77,24 +75,14 @@ func (d *DB) AddNote(notes []Note) ([]Note, error) {
 	return notes, nil
 }
 
-func (d *DB) ReadAllNotes(page int, pageSize int) ([]Note, int, error) {
-	notes := []Note{}
+func (d *DB) ReadAllNotes(tx *gorm.DB, page int, pageSize int) (notes []Note, totalPages int, err error) {
 	totalItems := d.db.Find(&notes).RowsAffected
-	totalPages := int(math.Ceil(float64(totalItems) / float64(pageSize)))
-	c := d.db.Scopes(Paginate(page, pageSize)).Preload(clause.Associations).Find(&notes)
+	totalPages = int(math.Ceil(float64(totalItems) / float64(pageSize)))
+	c := tx.Scopes(Paginate(page, pageSize)).Preload(clause.Associations).Find(&notes)
 	if c.Error != nil {
 		return nil, 0, c.Error
 	}
 	return notes, totalPages, nil
-}
-
-func (d *DB) GetRandomNotes(limit int) ([]Note, error) {
-	notes := []Note{}
-	c := db.db.Scopes(Random(limit)).Preload(clause.Associations).Find(&notes)
-	if c.Error != nil {
-		return nil, c.Error
-	}
-	return notes, nil
 }
 
 func (d *DB) ReadNote(id uint) (Note, error) {
