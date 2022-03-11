@@ -9,6 +9,7 @@ require (
 )
 
 require (
+	github.com/gobeam/stringy v0.0.5
 	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
 	github.com/google/go-cmp v0.5.7
 	github.com/jinzhu/inflection v1.0.0 // indirect

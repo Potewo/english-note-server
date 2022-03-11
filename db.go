@@ -67,6 +67,22 @@ func (d *DB) Random(tx *gorm.DB) *gorm.DB {
 	return tx.Order("RANDOM()")
 }
 
+func (d *DB) Search(tx *gorm.DB, s string) *gorm.DB {
+	return tx.Where("english LIKE ?", "%"+s+"%").
+		Or("japanese LIKE ?", "%"+s+"%").
+		Or("description LIKE ?", "%"+s+"%").
+		Or("similar LIKE ?", "%"+s+"%").
+		Or("examples LIKE ?", "%"+s+"%")
+}
+
+func (d *DB) Order(tx *gorm.DB, s string, isDesc bool) *gorm.DB {
+	if isDesc {
+		return tx.Order(s + " desc")
+	} else {
+		return tx.Order(s)
+	}
+}
+
 func (d *DB) AddNote(notes []Note) ([]Note, error) {
 	c := d.db.Create(&notes)
 	if c.Error != nil {

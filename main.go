@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
+	"github.com/gobeam/stringy"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"gorm.io/gorm"
@@ -67,8 +69,22 @@ func handleAddNote(c echo.Context) error {
 func handleGetNotes(c echo.Context) error {
 	var tx *gorm.DB = db.db
 	q := c.QueryParams()
-	if q.Get("mode") == "random" {
-		tx = db.Random(tx)
+	if q.Has("order") {
+		switch q.Get("order") {
+		case "random":
+			fmt.Printf("\nrandom mode!\n")
+			tx = db.Random(tx)
+		case "createdAtAscending", "updatedAtAscending", "lastPlayedAtAscending", "englishAscending":
+			orderBy := stringy.New(strings.TrimRight(q.Get("order"), "Ascending")).SnakeCase("?", "").Get()
+			tx = db.Order(tx, orderBy, false)
+		case "createdAtDescending", "updatedAtDescending", "lastPlayedAtDescending", "englishDescending":
+			orderBy := stringy.New(strings.TrimRight(q.Get("order"), "Descending")).SnakeCase("?", "").Get()
+			tx = db.Order(tx, orderBy, true)
+		}
+	}
+
+	if q.Has("search") {
+		tx = db.Search(tx, q.Get("search"))
 	}
 	pageSize := 30
 	if q.Has("page_size") {
