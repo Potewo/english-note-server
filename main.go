@@ -86,6 +86,12 @@ func handleGetNotes(c echo.Context) error {
 	if q.Has("search") {
 		tx = db.Search(tx, q.Get("search"))
 	}
+
+	if q.Has("tags") {
+		tags := q["tags"]
+		fmt.Printf("\ntags:\t%#v\n", tags)
+		tx = db.Tags(tx, tags)
+	}
 	pageSize := 30
 	if q.Has("page_size") {
 		_pageSize, err := strconv.Atoi(q.Get("page_size"))

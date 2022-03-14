@@ -83,6 +83,11 @@ func (d *DB) Order(tx *gorm.DB, s string, isDesc bool) *gorm.DB {
 	}
 }
 
+func (d *DB) Tags(tx *gorm.DB, tags []string) *gorm.DB {
+	sub := d.db.Select("note_id").Where("name in ?", tags).Table("tags")
+	return tx.Where("id in (?)", sub)
+}
+
 func (d *DB) AddNote(notes []Note) ([]Note, error) {
 	c := d.db.Create(&notes)
 	if c.Error != nil {
