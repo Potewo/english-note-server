@@ -97,7 +97,7 @@ func (d *DB) AddNote(notes []Note) ([]Note, error) {
 }
 
 func (d *DB) ReadAllNotes(tx *gorm.DB, page int, pageSize int) (notes []Note, totalPages int, err error) {
-	totalItems := d.db.Find(&notes).RowsAffected
+	totalItems := tx.Find(&notes).RowsAffected
 	totalPages = int(math.Ceil(float64(totalItems) / float64(pageSize)))
 	c := tx.Scopes(Paginate(page, pageSize)).Preload(clause.Associations).Find(&notes)
 	if c.Error != nil {
