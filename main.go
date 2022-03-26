@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-
 	"github.com/gobeam/stringy"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -92,6 +91,20 @@ func handleGetNotes(c echo.Context) error {
 		fmt.Printf("\ntags:\t%#v\n", tags)
 		tx = db.Tags(tx, tags)
 	}
+
+	dateRange := DateRange{}
+	if q.Has("last_played_start") || q.Has("last_played_end") {
+		if q.Has("last_played_start") {
+			start := q.Get("last_played_start")
+			dateRange.start = &start
+		}
+		if q.Has("last_played_end") {
+			end := q.Get("last_played_end")
+			dateRange.end = &end
+		}
+		tx = db.LastPlayed(tx, dateRange)
+	}
+
 	pageSize := 30
 	if q.Has("page_size") {
 		_pageSize, err := strconv.Atoi(q.Get("page_size"))
@@ -167,4 +180,9 @@ func handleAddRecord(c echo.Context) error {
 		return err
 	}
 	return c.JSON(http.StatusCreated, &records)
+}
+
+type DateRange struct {
+	start *string
+	end   *string
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"math"
+	"strconv"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -86,6 +87,27 @@ func (d *DB) Order(tx *gorm.DB, s string, isDesc bool) *gorm.DB {
 func (d *DB) Tags(tx *gorm.DB, tags []string) *gorm.DB {
 	sub := d.db.Select("note_id").Where("name in ?", tags).Table("tags")
 	return tx.Where("id in (?)", sub)
+}
+
+func (d *DB) LastPlayed(tx *gorm.DB, dateRange DateRange) *gorm.DB {
+	noteIDs := d.db.Select("note_id")
+	if dateRange.start != nil {
+		noteIDs.Where("updated_at > ?", dateRange.start)
+	}
+	if dateRange.end != nil {
+		noteIDs.Where("updated_at < ?", dateRange.end)
+	}
+	noteIDs = noteIDs.Group("note_id").Table("records")
+	return tx.Where("id in (?)", noteIDs)
+}
+
+func (d *DB) CorrectAnswerRate(tx *gorm.DB, rate float64, isBigger bool) *gorm.DB {
+	operator := "< "
+	if (isBigger) {
+		operator = "> "
+	}
+	noteIDs := db.db.Select("note_id").Group("note_id").Having("avg(correct) " + operator + strconv.FormatFloat(rate, 'f', 3, 64)).Table("records")
+	return tx.Where("id in (?)", noteIDs)
 }
 
 func (d *DB) AddNote(notes []Note) ([]Note, error) {
