@@ -89,7 +89,7 @@ func (d *DB) Tags(tx *gorm.DB, tags []string) *gorm.DB {
 	return tx.Where("id in (?)", sub)
 }
 
-func (d *DB) LastPlayed(tx *gorm.DB, dateRange DateRange) *gorm.DB {
+func (d *DB) LastPlayed(tx *gorm.DB, dateRange Range[string]) *gorm.DB {
 	noteIDs := d.db.Select("note_id")
 	if dateRange.start != nil {
 		noteIDs.Where("updated_at > ?", dateRange.start)
@@ -101,12 +101,15 @@ func (d *DB) LastPlayed(tx *gorm.DB, dateRange DateRange) *gorm.DB {
 	return tx.Where("id in (?)", noteIDs)
 }
 
-func (d *DB) CorrectAnswerRate(tx *gorm.DB, rate float64, isBigger bool) *gorm.DB {
-	operator := "< "
-	if (isBigger) {
-		operator = "> "
+func (d *DB) CorrectRate(tx *gorm.DB, correctRate Range[float64]) *gorm.DB {
+	noteIDs := db.db.Select("note_id").Group("note_id")
+	if correctRate.start != nil {
+		noteIDs.Having("avg(correct) > " + strconv.FormatFloat(*correctRate.start, 'f', 3, 64))
 	}
-	noteIDs := db.db.Select("note_id").Group("note_id").Having("avg(correct) " + operator + strconv.FormatFloat(rate, 'f', 3, 64)).Table("records")
+	if correctRate.end != nil {
+		noteIDs.Having("avg(correct) < " + strconv.FormatFloat(*correctRate.end, 'f', 3, 64))
+	}
+	noteIDs = noteIDs.Table("records")
 	return tx.Where("id in (?)", noteIDs)
 }
 

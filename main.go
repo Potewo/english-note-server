@@ -92,7 +92,7 @@ func handleGetNotes(c echo.Context) error {
 		tx = db.Tags(tx, tags)
 	}
 
-	dateRange := DateRange{}
+	dateRange := Range[string]{}
 	if q.Has("last_played_start") || q.Has("last_played_end") {
 		if q.Has("last_played_start") {
 			start := q.Get("last_played_start")
@@ -104,6 +104,24 @@ func handleGetNotes(c echo.Context) error {
 		}
 		tx = db.LastPlayed(tx, dateRange)
 	}
+
+	correctRate := Range[float64]{}
+	if q.Has("correct_rate_start") || q.Has("correct_rate_end") {
+		if q.Has("correct_rate_start") {
+			start,err  := strconv.ParseFloat(q.Get("correct_rate_start"), 64)
+			if err == nil {
+				correctRate.start = &start
+			}
+		}
+		if q.Has("correct_rate_end") {
+			end, err := strconv.ParseFloat(q.Get("correct_rate_end"), 64)
+			if (err == nil) {
+				correctRate.end = &end
+			}
+		}
+		tx = db.CorrectRate(tx, correctRate)
+	}
+
 
 	pageSize := 30
 	if q.Has("page_size") {
@@ -182,7 +200,7 @@ func handleAddRecord(c echo.Context) error {
 	return c.JSON(http.StatusCreated, &records)
 }
 
-type DateRange struct {
-	start *string
-	end   *string
+type Range[T any] struct {
+	start *T
+	end   *T
 }
