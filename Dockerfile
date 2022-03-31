@@ -5,7 +5,7 @@ RUN yarn install
 COPY ./english-note .
 RUN yarn build
 
-FROM golang:1.17-alpine3.15
+FROM golang:1.18-alpine
 
 RUN apk add --no-cache go \
         git \
