@@ -2,13 +2,13 @@ package main
 
 import (
 	"fmt"
-	"net/http"
-	"strconv"
-	"strings"
 	"github.com/gobeam/stringy"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"gorm.io/gorm"
+	"net/http"
+	"strconv"
+	"strings"
 )
 
 var db *DB
@@ -108,20 +108,30 @@ func handleGetNotes(c echo.Context) error {
 	correctRate := Range[float64]{}
 	if q.Has("correct_rate_start") || q.Has("correct_rate_end") {
 		if q.Has("correct_rate_start") {
-			start,err  := strconv.ParseFloat(q.Get("correct_rate_start"), 64)
+			start, err := strconv.ParseFloat(q.Get("correct_rate_start"), 64)
 			if err == nil {
 				correctRate.start = &start
 			}
 		}
 		if q.Has("correct_rate_end") {
 			end, err := strconv.ParseFloat(q.Get("correct_rate_end"), 64)
-			if (err == nil) {
+			if err == nil {
 				correctRate.end = &end
 			}
 		}
 		tx = db.CorrectRate(tx, correctRate)
 	}
 
+	ids := []int{}
+	if q.Has("ids") {
+		for _, idStr := range q["ids"] {
+			id, err := strconv.Atoi(idStr)
+			if err == nil {
+				ids = append(ids, id)
+			}
+		}
+		tx = db.Ids(tx, ids)
+	}
 
 	pageSize := 30
 	if q.Has("page_size") {

@@ -113,6 +113,10 @@ func (d *DB) CorrectRate(tx *gorm.DB, correctRate Range[float64]) *gorm.DB {
 	return tx.Where("id in (?)", noteIDs)
 }
 
+func (d *DB) Ids(tx *gorm.DB, ids []int) *gorm.DB {
+	return tx.Where("id in (?)", ids)
+}
+
 func (d *DB) AddNote(notes []Note) ([]Note, error) {
 	c := d.db.Create(&notes)
 	if c.Error != nil {
