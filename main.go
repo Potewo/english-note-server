@@ -38,11 +38,12 @@ func main() {
 	e.DELETE("/note", handleDeleteNotes)
 	e.GET("/record", handleGetRecord)
 	e.POST("/record", handleAddRecord)
+	e.File("/new*", "public/index.html")
+	e.File("/edit*", "public/index.html")
+	e.File("/notes*", "public/index.html")
+	e.File("/quiz*", "public/index.html")
 	e.Static("/", "public")
 	e.File("/", "public/index.html")
-	e.File("/new/*", "public/index.html")
-	e.File("/edit/*", "public/index.html")
-	e.File("/notes/*", "public/index.html")
 
 	e.Logger.Fatal(e.Start(":1323"))
 }
