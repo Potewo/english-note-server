@@ -134,6 +134,19 @@ func handleGetNotes(c echo.Context) error {
 		tx = db.Ids(tx, ids)
 	}
 
+	ids = []int{}
+	if q.Has("current_correct_rate") && q.Has("current_correct_n") {
+		rate, err := strconv.ParseFloat(q.Get("current_correct_rate"), 64)
+		if err == nil {
+			_n, err := strconv.Atoi(q.Get("current_correct_n"))
+			n := uint(_n)
+			if err == nil {
+				ids, err = db.CurrentAveCorrectRate(tx, rate, n)
+				tx = db.Ids(tx, ids)
+			}
+		}
+	}
+
 	pageSize := 30
 	if q.Has("page_size") {
 		_pageSize, err := strconv.Atoi(q.Get("page_size"))

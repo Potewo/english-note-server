@@ -117,6 +117,12 @@ func (d *DB) Ids(tx *gorm.DB, ids []int) *gorm.DB {
 	return tx.Where("id in (?)", ids)
 }
 
+func (d *DB) CurrentAveCorrectRate(tx *gorm.DB, correctRate float64, n uint) ([]int, error) {
+	var ids []int
+	ctx := db.db.Raw("SELECT note_id FROM ( SELECT created_at, correct, note_id , ROW_NUMBER() OVER (PARTITION BY note_id ORDER BY created_at desc) AS correct_rank FROM records ) WHERE correct_rank <= ? GROUP BY note_id HAVING AVG(correct) > ?", n, correctRate).Scan(&ids)
+	return ids, ctx.Error
+}
+
 func (d *DB) AddNote(notes []Note) ([]Note, error) {
 	c := d.db.Create(&notes)
 	if c.Error != nil {
